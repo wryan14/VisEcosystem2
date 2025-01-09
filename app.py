@@ -461,6 +461,45 @@ def create_app(config_file=None):
             'templates': [t.to_dict() for t in templates]
         })
 
+    # crucial for embedding in Python apps (clears the X and Y)
+    @app.route('/api/config/<int:viz_id>')
+    def get_visualization_config(viz_id):
+        """Get the Plotly configuration for a visualization with empty data arrays"""
+        try:
+            viz = Visualization.query.get_or_404(viz_id)
+            
+            # Parse the stored configuration
+            config = json.loads(viz.config)
+            
+            # Clear out data points while preserving structure
+            if 'data' in config and isinstance(config['data'], list):
+                for trace in config['data']:
+                    # Remove actual data points but keep the structure
+                    if 'x' in trace:
+                        trace['x'] = []
+                    if 'y' in trace:
+                        trace['y'] = []
+                    # Handle other data arrays that might exist
+                    if 'z' in trace:
+                        trace['z'] = []
+                    if 'values' in trace:
+                        trace['values'] = []
+            
+            return jsonify({
+                'id': viz.id,
+                'name': viz.name,
+                'chart_type': viz.chart_type,
+                'config': config,
+                'category': viz.category,
+                'description': viz.description
+            })
+            
+        except Exception as e:
+            logger.error(f"Error getting visualization config {viz_id}: {str(e)}")
+            return jsonify({
+                'error': f'Error retrieving configuration: {str(e)}'
+            }), 500
+
     @app.errorhandler(404)
     def not_found_error(error):
         return render_template('errors/404.html'), 404
