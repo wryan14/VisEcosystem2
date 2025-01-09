@@ -72,7 +72,7 @@ document.addEventListener('DOMContentLoaded', function() {
     {% for category, vizs in visualizations_by_category.items() %}
         {% for viz in vizs %}
             try {
-                const config = {{ viz.config|safe }};
+                const config = {{ viz.config|tojson }};
                 Plotly.newPlot('preview-{{ viz.id }}', 
                     config.data, 
                     {...config.layout, 
