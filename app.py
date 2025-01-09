@@ -464,26 +464,33 @@ def create_app(config_file=None):
     # crucial for embedding in Python apps (clears the X and Y)
     @app.route('/api/config/<int:viz_id>')
     def get_visualization_config(viz_id):
-        """Get the Plotly configuration for a visualization with empty data arrays"""
+        """
+        Get the Plotly configuration for a visualization.
+        Query parameter 'clear_data=true' will return empty data arrays.
+        """
         try:
             viz = Visualization.query.get_or_404(viz_id)
             
             # Parse the stored configuration
             config = json.loads(viz.config)
             
-            # Clear out data points while preserving structure
-            if 'data' in config and isinstance(config['data'], list):
-                for trace in config['data']:
-                    # Remove actual data points but keep the structure
-                    if 'x' in trace:
-                        trace['x'] = []
-                    if 'y' in trace:
-                        trace['y'] = []
-                    # Handle other data arrays that might exist
-                    if 'z' in trace:
-                        trace['z'] = []
-                    if 'values' in trace:
-                        trace['values'] = []
+            # Check if we should clear the data arrays
+            should_clear = request.args.get('clear_data', '').lower() == 'true'
+            
+            if should_clear:
+                # Clear out data points while preserving structure
+                if 'data' in config and isinstance(config['data'], list):
+                    for trace in config['data']:
+                        # Remove actual data points but keep the structure
+                        if 'x' in trace:
+                            trace['x'] = []
+                        if 'y' in trace:
+                            trace['y'] = []
+                        # Handle other data arrays that might exist
+                        if 'z' in trace:
+                            trace['z'] = []
+                        if 'values' in trace:
+                            trace['values'] = []
             
             return jsonify({
                 'id': viz.id,
